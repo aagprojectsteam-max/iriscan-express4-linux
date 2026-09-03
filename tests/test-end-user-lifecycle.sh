@@ -5,12 +5,13 @@ DEB=${1:?usage: test-end-user-lifecycle.sh PACKAGE.deb}
 TMP=$(mktemp -d)
 trap 'rm -rf -- "$TMP"' EXIT
 dpkg-deb -x "$DEB" "$TMP/root"
-mkdir -p "$TMP/home/.winboat" "$TMP/state" "$TMP/bin"
-cp "$ROOT/tests/fixtures/winboat/mapping/docker-compose.yml" "$TMP/home/.winboat/docker-compose.yml"
+test_home=$TMP/user-home
+mkdir -p "$test_home/.winboat" "$TMP/state" "$TMP/bin"
+cp "$ROOT/tests/fixtures/winboat/mapping/docker-compose.yml" "$test_home/.winboat/docker-compose.yml"
 cp "$ROOT/tests/fixtures/clean-bin/lsusb" "$ROOT/tests/fixtures/clean-bin/docker" \
     "$ROOT/tests/fixtures/clean-bin/dpkg-query" "$TMP/bin/"
 chmod 0755 "$TMP/bin/lsusb" "$TMP/bin/docker" "$TMP/bin/dpkg-query"
-export HOME=$TMP/home
+export HOME=$test_home
 export XDG_STATE_HOME=$TMP/state
 export PATH=$TMP/bin:/usr/bin:/bin
 export IRISCAN_WINBOAT_LIB_DIR=$TMP/root/usr/lib/iriscan-express4-ubuntu
