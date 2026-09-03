@@ -2,6 +2,10 @@
 
 This is the practical Ubuntu route while native image transfer remains experimental.
 
+Ordinary users should install `iriscan-express4-ubuntu-installer_0.3.0_all.deb` and run `iriscan-setup --install-winboat`. The downloader accepts only the stable amd64 Debian asset from the official `winboat-org/winboat` GitHub Release and requires its GitHub-published SHA256 digest to match before invoking `apt`.
+
+WinBoat remains beta. Its official prerequisites and downloads are maintained at <https://github.com/winboat-org/winboat>. Creating the Windows environment is intentionally completed in WinBoat's GUI because virtualization, storage, Windows licensing, and Docker/Podman choices cannot be safely guessed by this project. WinBoat documents that Podman USB passthrough is currently unsupported.
+
 ## What the toolkit changes
 
 WinBoat passes extra QEMU options through the compose environment variable `ARGUMENTS`. The installer appends exactly one device selector:
@@ -23,6 +27,8 @@ bash scripts/winboat/iriscan-winboat-preflight.sh
 bash scripts/winboat/iriscan-winboat-install.sh --dry-run
 bash scripts/winboat/iriscan-winboat-install.sh
 ```
+
+The equivalent packaged end-user command is simply `iriscan-setup`.
 
 Review the diff. Restart WinBoat normally and then run `bash scripts/winboat/iriscan-winboat-verify.sh`.
 

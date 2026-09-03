@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0-ubuntu — 2026-09-03
+
+- Added one obvious end-user Ubuntu installer package and Quick Start asset.
+- Added guided `iriscan-setup`, safe official WinBoat download with GitHub SHA256 verification, `iriscan-doctor`, `iriscan-uninstall`, and the short `iriscan-support-bundle` command.
+- Added clean-home package lifecycle coverage for install, idempotent reinstall, doctor, uninstall, repeated uninstall, and reinstall.
+- Rewrote the README around the ordinary user's download and scan path.
+- Documented exact official WinBoat and IRIS support sources and every unavoidable proprietary/GUI step.
+- Preserved the native Linux path as experimental; no SANE or native-driver claim is made.
+
 ## 0.2.0-winboat — 2026-09-03
 
 - Added a safe, idempotent WinBoat integration toolkit with dry-run, validation, timestamped backups, targeted removal, verification, and redacted support bundles.

@@ -1,6 +1,6 @@
 # Windows setup and verification
 
-Use the official IRIS/Avision installer obtained from the vendor, original licensed media, or another lawful source. This project does not redistribute the proprietary driver package.
+Use the official IRIS/Avision installer obtained from the original licensed media or the [official IRIScan Express 4 support section](https://support.irislink.com/en-us/section/106-iriscan-express-4-iriscan-executive-4). If your licensed download is no longer shown, use the conversation/contact option on that official support site. This project does not redistribute the proprietary package because no redistribution permission has been established.
 
 ## Install
 

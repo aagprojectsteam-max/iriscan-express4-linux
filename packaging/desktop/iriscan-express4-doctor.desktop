@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=IRIScan Express 4 Doctor
+Comment=Check IRIScan Express 4 and WinBoat readiness
+Exec=/usr/lib/iriscan-express4-ubuntu/iriscan-terminal-wrapper.sh doctor
+Terminal=true
+Categories=Utility;
+Keywords=scanner;IRIScan;diagnostics;

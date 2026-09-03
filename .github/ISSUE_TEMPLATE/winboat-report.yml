@@ -26,5 +26,7 @@ body:
   - type: textarea
     id: details
     attributes:
-      label: Result and redacted support bundle
-      description: Do not upload vendor installers, serials, credentials, or scanned documents.
+      label: Doctor output and redacted support bundle
+      description: Run iriscan-doctor, then iriscan-support-bundle. Review the archive before attaching it. Do not upload vendor installers, serials, credentials, or scanned documents.
+    validations:
+      required: true

@@ -1,0 +1,52 @@
+IRIScan Express 4 for Ubuntu — Quick Start
+===========================================
+
+Supported automated setup: 64-bit Ubuntu 24.04 or newer, hardware
+virtualization, at least 4 GB RAM, and at least 32 GB free storage.
+
+1. Download iriscan-express4-ubuntu-installer_0.3.0_all.deb from the
+   v0.3.0-ubuntu GitHub Release.
+
+2. Open a terminal in your Downloads folder and install it:
+
+   sudo apt install ./iriscan-express4-ubuntu-installer_0.3.0_all.deb
+
+3. Run the guided setup as your normal desktop user (without sudo):
+
+   iriscan-setup --install-winboat
+
+   The WinBoat download comes only from the official winboat-org GitHub
+   Release and is checked against the SHA256 published by GitHub. The setup
+   offers to install missing Docker, Compose v2, and FreeRDP 3 Ubuntu packages.
+
+   If setup reports DOCKER_ACCESS=ACTION_REQUIRED, run the displayed usermod
+   command, then log out and back in. Membership in the docker group is
+   root-equivalent, so this security-relevant step is never silently applied.
+
+4. Launch WinBoat and complete its Windows installation. Close WinBoat, then:
+
+   iriscan-setup
+
+5. Start WinBoat. Inside Windows, lawfully install the official IRIS/Avision
+   software from the original media or the IRIS support section:
+
+   https://support.irislink.com/en-us/section/106-iriscan-express-4-iriscan-executive-4
+
+6. Scan from the official Windows Capture Tool.
+
+Check status:
+
+   iriscan-doctor
+
+Create a redacted support archive:
+
+   iriscan-support-bundle
+
+Remove this project's passthrough change:
+
+   iriscan-uninstall
+
+Native Linux/SANE scanning is still experimental and is not installed by this
+package. WinBoat is currently beta and requires an amd64 Ubuntu system with
+virtualization, sufficient storage/RAM, Docker (not Docker Desktop), Compose
+v2, and FreeRDP 3. Podman USB passthrough is not supported by WinBoat.
