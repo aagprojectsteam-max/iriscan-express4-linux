@@ -40,38 +40,44 @@ Linux normally attaches `usb-storage`. The scanner identifies over SCSI as vendo
 
 ## Start here
 
+Clone and validate the research tree:
+
+```bash
+git clone https://github.com/aagprojectsteam-max/iriscan-express4-linux.git
+cd iriscan-express4-linux
+bash scripts/check.sh
+```
+
+`check.sh` reconstructs the sanitized initialization transcript, validates its markers, builds the C source with strict warnings, syntax-checks the shell tools and compiles the Python converter.
+
 ### Safe diagnostics
 
 The diagnostic tools do not start a scan:
 
 ```bash
 sudo apt install sg3-utils usbutils
-./tools/iriscan-diagnose.sh
+bash tools/iriscan-diagnose.sh
 ```
 
 For a minimal hardware communication test using standard SCSI INQUIRY only:
 
 ```bash
-sudo ./tools/iriscan-safe-inquiry.sh
+sudo bash tools/iriscan-safe-inquiry.sh
 ```
 
 Please attach the generated support report to a hardware-report issue if your device behaves differently.
 
 ### Experimental scanner code
 
-Build:
-
-```bash
-./scripts/build.sh
-```
-
 The experimental scan path physically moves paper and sends reverse-engineered vendor commands. Read `docs/TESTING.md` and `SECURITY.md` before running it.
 
+The one-command wrapper reconstructs the sanitized initialization transcript before launching the experimental scanner:
+
 ```bash
-sudo ./scripts/run-experimental-scan.sh
+bash scripts/prepare-and-run-experimental-scan.sh
 ```
 
-This is for development/testing, not normal scanning yet.
+This is for development/testing, not normal scanning yet. A complete image has **not** yet been proven on native Linux.
 
 ## What has been reverse engineered
 
@@ -83,13 +89,22 @@ The unresolved boundary is image payload retrieval through vendor opcode `0xC3`.
 
 ```text
 src/        experimental Linux implementation
-tools/      safe diagnostics and forensic helpers
+tools/      safe diagnostics and forensic research helpers
 protocol/   sanitized operation transcripts from the captured protocol
 docs/       hardware, protocol, testing, privacy and development notes
-scripts/    build/check/experimental-run helpers
+scripts/    materialization, build, checks and experimental-run helpers
 packaging/  future udev / Debian packaging work
 .github/    CI and issue templates
+releases/   release notes/checklists/checksums (binary assets belong in GitHub Releases)
 ```
+
+The initialization capture is committed in sanitized parts under `protocol/init-parts/`. Run:
+
+```bash
+bash scripts/materialize-protocol.sh
+```
+
+to reconstruct the runtime `protocol/init.ops`. The connected scanner's serial is injected only into a private runtime copy when the experimental test starts; no reference-device serial is published in this repository.
 
 ## Goals
 
@@ -112,7 +127,11 @@ Additional Express 4 units are especially useful. We want to compare:
 - C3 residual behavior
 - eventual successful scan results
 
-Please use the issue templates. Do **not** upload proprietary IRIS/Avision binaries, private documents, or unsanitized captures.
+Please use the issue templates. Do **not** upload proprietary IRIS/Avision binaries, private documents, scanner serials unless necessary, or unsanitized captures.
+
+## Releases
+
+The first public line is **v0.1.0-research**. It is intentionally a research/pre-release line, not a production driver. See `releases/README.md` and `docs/RELEASE-CHECKLIST.md` for the source/diagnostic assets and their checksums.
 
 ## Legal / provenance
 
