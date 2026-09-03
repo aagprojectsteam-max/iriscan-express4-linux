@@ -56,13 +56,25 @@ static void put_be32(uint8_t *p, uint32_t v) {
 }
 
 static uint64_t fnv1a64(const uint8_t *buf, size_t n) {
-    uint64_t h = UINT64_C(1469598103934665603);
+    uint64_t h = UINT64_C(14695981039346656037);
     for (size_t i = 0; i < n; ++i) {
         h ^= buf[i];
         h *= UINT64_C(1099511628211);
     }
     return h;
 }
+
+struct sg_observation {
+    int ioctl_rc;
+    int resid;
+    unsigned char status;
+    unsigned short host_status;
+    unsigned short driver_status;
+    unsigned int info;
+    unsigned int duration_ms;
+    unsigned char sense_len;
+    uint8_t sense[SENSE_LEN];
+};
 
 static void dump_sense(const uint8_t *s, int n) {
     if (n <= 0) return;
@@ -80,7 +92,7 @@ static void dump_sense(const uint8_t *s, int n) {
 static int sg_cmd(int fd, const uint8_t *cdb, int cdb_len,
                   int dxfer_dir, void *buf, uint32_t len,
                   unsigned timeout_ms, uint32_t *actual_out,
-                  bool quiet) {
+                  bool quiet, struct sg_observation *observation) {
     sg_io_hdr_t io;
     uint8_t sense[SENSE_LEN];
     memset(&io, 0, sizeof(io));
@@ -99,6 +111,21 @@ static int sg_cmd(int fd, const uint8_t *cdb, int cdb_len,
     do {
         rc = ioctl(fd, SG_IO, &io);
     } while (rc < 0 && errno == EINTR && !g_stop);
+
+    if (observation) {
+        memset(observation, 0, sizeof(*observation));
+        observation->ioctl_rc = rc;
+        observation->resid = io.resid;
+        observation->status = io.status;
+        observation->host_status = io.host_status;
+        observation->driver_status = io.driver_status;
+        observation->info = io.info;
+        observation->duration_ms = io.duration;
+        observation->sense_len = io.sb_len_wr;
+        if (observation->sense_len > SENSE_LEN)
+            observation->sense_len = SENSE_LEN;
+        memcpy(observation->sense, sense, observation->sense_len);
+    }
 
     if (actual_out) {
         *actual_out = (io.resid >= 0 && (uint32_t)io.resid <= len)
@@ -222,7 +249,8 @@ static int run_ops_file(int fd, const char *path, const char *phase,
             break;
         }
         uint32_t actual = 0;
-        int rc = sg_cmd(fd, cdb, clen, sgdir, buf, xfer, 30000, &actual, best_effort);
+        int rc = sg_cmd(fd, cdb, clen, sgdir, buf, xfer, 30000, &actual,
+                        best_effort, NULL);
         ++op_no;
         if (rc != 0) {
             fprintf(stderr,
@@ -280,7 +308,8 @@ static int c5_in(int fd, uint32_t len, uint8_t s0, uint8_t s1, uint8_t s2,
     uint8_t cdb[16];
     make_c5(cdb, len, s0, s1, s2);
     memset(out, 0, len);
-    return sg_cmd(fd, cdb, 16, SG_DXFER_FROM_DEV, out, len, 10000, actual, false);
+    return sg_cmd(fd, cdb, 16, SG_DXFER_FROM_DEV, out, len, 10000, actual,
+                  false, NULL);
 }
 
 struct scan_status {
@@ -374,7 +403,8 @@ static int poll_status_once(int fd, struct scan_status *st,
                              inner_read, sizeof(inner_read),
                              10000,
                              &read_actual,
-                             false);
+                             false,
+                             NULL);
 
         /*
          * SG_DXFER_TO_DEV:
@@ -482,8 +512,61 @@ static int read_c3_range(int fd, uint32_t address, uint32_t total,
         uint32_t actual = 0;
         int rc = -1;
         for (int attempt = 1; attempt <= 3; ++attempt) {
+            /*
+             * Evidence-first transfer accounting: initialize every byte to a
+             * deterministic sentinel, then record exactly which buffer region
+             * SG_IO changed. A matching payload byte can look unchanged, so
+             * this is forensic evidence rather than an inferred byte count.
+             */
+            uint8_t *sentinel = malloc(chunk);
+            if (!sentinel) {
+                fprintf(stderr, "Out of memory allocating C3 sentinel\n");
+                return -1;
+            }
+            for (uint32_t i = 0; i < chunk; ++i)
+                sentinel[i] = (uint8_t)(0xa5U ^ (uint8_t)i ^
+                                        (uint8_t)((address + done) >> 8));
+            memcpy(dest + done, sentinel, chunk);
+            struct sg_observation observation;
             rc = sg_cmd(fd, cdb, 16, SG_DXFER_FROM_DEV,
-                        dest + done, chunk, 30000, &actual, false);
+                        dest + done, chunk, 30000, &actual, false,
+                        &observation);
+            uint32_t changed = 0;
+            uint32_t first_changed = chunk;
+            uint32_t last_changed = 0;
+            for (uint32_t i = 0; i < chunk; ++i) {
+                if (dest[done + i] != sentinel[i]) {
+                    if (first_changed == chunk) first_changed = i;
+                    last_changed = i;
+                    ++changed;
+                }
+            }
+            uint32_t unchanged_suffix = changed == 0 ? chunk : chunk - last_changed - 1U;
+            uint64_t full_hash = fnv1a64(dest + done, chunk);
+            uint64_t derived_hash = fnv1a64(dest + done, actual <= chunk ? actual : 0);
+            uint64_t sense_hash = fnv1a64(observation.sense,
+                                          observation.sense_len);
+            fprintf(stderr,
+                    "C3_OBSERVATION attempt=%d address=0x%08x requested=%u "
+                    "resid=%d derived_actual=%u ioctl_rc=%d status=0x%02x "
+                    "host=0x%04x driver=0x%04x info=0x%08x duration_ms=%u "
+                    "sense_len=%u sense_fnv1a64=%016" PRIx64 " changed=%u "
+                    "first_changed=%s last_changed=%s unchanged_suffix=%u "
+                    "buffer_fnv1a64=%016" PRIx64 " derived_fnv1a64=%016" PRIx64 "\n",
+                    attempt, address + done, chunk, observation.resid, actual,
+                    observation.ioctl_rc, observation.status,
+                    observation.host_status, observation.driver_status,
+                    observation.info, observation.duration_ms,
+                    observation.sense_len, sense_hash, changed,
+                    first_changed == chunk ? "NONE" : "SET",
+                    changed == 0 ? "NONE" : "SET", unchanged_suffix,
+                    full_hash, derived_hash);
+            if (changed != 0) {
+                fprintf(stderr,
+                        "C3_MODIFICATION_BOUNDARY first=%u last=%u requested=%u\n",
+                        first_changed, last_changed, chunk);
+            }
+            free(sentinel);
             if (rc == 0 && actual == chunk) break;
             fprintf(stderr,
                     "C3 read retry %d: addr=0x%08x requested=%u actual=%u rc=%d\n",
@@ -507,7 +590,7 @@ static int verify_device(int fd) {
     uint32_t actual = 0;
     memset(data, 0, sizeof(data));
     if (sg_cmd(fd, cdb, 6, SG_DXFER_FROM_DEV, data, sizeof(data),
-               10000, &actual, false) != 0 || actual < 36) {
+               10000, &actual, false, NULL) != 0 || actual < 36) {
         fprintf(stderr, "Standard INQUIRY failed\n");
         return -1;
     }

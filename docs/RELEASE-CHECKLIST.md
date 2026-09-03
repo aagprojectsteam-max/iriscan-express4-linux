@@ -1,69 +1,36 @@
-# v0.1.0-research release checklist
+# v0.2.0-winboat release checklist
 
-This project is **not yet a production Linux scanner driver**. The v0.1.0 line is a research/pre-release intended for hardware comparison, safe diagnostics, protocol review and experimental development.
+This is the first practical Ubuntu-use release through WinBoat. It is **not** a production native Linux driver release.
 
-## Release metadata
+## Metadata
 
-- Tag: `v0.1.0-research`
-- Title: `IRIScan Express 4 Linux v0.1.0-research`
-- Mark as: **Pre-release**
-- Do not mark as Latest/Stable driver support.
+- Tag: `v0.2.0-winboat`
+- Title: `IRIScan Express 4 v0.2.0 — WinBoat support`
+- Working method: Ubuntu + WinBoat + official Windows driver
+- Native method: experimental; C3 `resid=78` remains unresolved
 
-## Assets
-
-Attach these files to the GitHub Release:
-
-1. `iriscan-express4-linux-0.1.0-research.zip`
-2. `iriscan-express4-linux-0.1.0-research.tar.gz`
-3. `iriscan-express4-diagnostic_0.1.0_all.deb`
-4. `iriscan-express4-diagnostic-tools-0.1.0.tar.gz`
-5. `0.1.0-research-SHA256SUMS.txt`
-
-Verify every asset against `releases/0.1.0-research-SHA256SUMS.txt` before publishing.
-
-## Required release warning
-
-> Experimental research release. Safe diagnostics are available, and native Linux control has reached initialization, scan setup, physical paper transport, status polling and image-buffer discovery. Complete native image transfer is not yet proven; the current research blocker is vendor opcode C3 and repeatable SG_IO `io.resid=78` behavior. Do not treat this release as a production SANE driver.
-
-## Validation before publishing
+## Build and verify
 
 ```bash
-git clone https://github.com/aagprojectsteam-max/iriscan-express4-linux.git
-cd iriscan-express4-linux
 bash scripts/check.sh
+bash scripts/build-release.sh
+sha256sum -c dist/IRIScan-Express4-v0.2.0-SHA256SUMS.txt
 ```
 
-Expected final line:
+Expected assets:
 
-```text
-CHECKS=PASS
-```
+1. `iriscan-express4-winboat-tools-0.2.0.tar.gz`
+2. `iriscan-express4-winboat-tools-0.2.0.zip`
+3. `iriscan-express4-winboat-support_0.2.0_all.deb`
+4. `IRIScan-Express4-v0.2.0-SHA256SUMS.txt`
 
-Safe hardware testers may then run:
+The Debian package must contain no maintainer script that edits compose or restarts WinBoat.
 
-```bash
-bash tools/iriscan-diagnose.sh
-sudo bash tools/iriscan-safe-inquiry.sh
-```
+## Release gates
 
-The experimental scan path physically moves paper and must be run only after reading `docs/TESTING.md` and `SECURITY.md`:
+- CI, fixture tests, package inspection, and checksum verification pass.
+- Dry-run against a sanitized real compose copy changes only `ARGUMENTS`.
+- Privacy scan finds no private paths, credentials, serials, unrelated infrastructure markers, proprietary binaries, captures, or scanned content.
+- README and notes clearly separate working-now WinBoat from experimental native Linux.
 
-```bash
-bash scripts/prepare-and-run-experimental-scan.sh
-```
-
-## Privacy/legal gate
-
-Before every release verify that no artifact contains:
-
-- reference scanner serial number
-- local usernames/home paths
-- passwords/tokens
-- WinBoat/Otzar/other unrelated machine configuration
-- proprietary IRIS/Avision Windows DLL/EXE/driver binaries
-- private scanned documents
-- unsanitized USB captures
-
-## Promotion criteria
-
-Do not promote beyond research/experimental status until native Linux produces a complete valid page and succeeds for at least two consecutive scans. SANE/DEB production claims require additional reboot/replug/permissions/regression testing.
+End-to-end acceptance requires the user to verify the physical PnP device, save two scans, and confirm persistence after restart.

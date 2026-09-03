@@ -5,7 +5,7 @@
 If you own an IRIScan Express 4, run:
 
 ```bash
-./tools/iriscan-diagnose.sh
+bash tools/iriscan-diagnose.sh
 ```
 
 Then open a **Hardware report** issue and attach the generated `.tar.gz`. Please review the bundle before uploading it. The diagnostic script redacts the USB serial by default.

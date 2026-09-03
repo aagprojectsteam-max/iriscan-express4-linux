@@ -1,0 +1,8 @@
+name: winboat
+services:
+  windows:
+    container_name: WinBoat
+    environment:
+      ARGUMENTS: "-qmp tcp:0.0.0.0:7149,server,wait=off -device usb-host,vendorid=0x1234,productid=0xabcd,id=keep_me"
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb

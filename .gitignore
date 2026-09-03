@@ -6,4 +6,6 @@ build/
 *.log
 *.tar.gz
 *.zip
+*.deb
+dist/
 __pycache__/
