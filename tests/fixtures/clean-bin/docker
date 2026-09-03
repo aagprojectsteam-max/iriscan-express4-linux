@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+if [[ " $* " == *' config --quiet '* ]]; then exit 0; fi
+if [[ " $* " == *' ps -q '* ]]; then
+    [[ "${IRISCAN_TEST_CONTAINER_RUNNING:-0}" == 1 ]] && echo test-container-id
+    exit 0
+fi
+exit 0

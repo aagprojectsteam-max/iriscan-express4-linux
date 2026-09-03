@@ -1,10 +1,12 @@
-Package: iriscan-express4-winboat-support
-Version: 0.2.0
+Package: iriscan-express4-ubuntu-installer
+Version: 0.3.0
 Section: utils
 Priority: optional
 Architecture: all
-Depends: bash, python3, coreutils, diffutils, sed, tar
+Depends: bash, python3, coreutils, diffutils, sed, tar, usbutils, ca-certificates, sudo
+Conflicts: iriscan-express4-winboat-support
+Replaces: iriscan-express4-winboat-support
 Maintainer: IRIScan Express 4 Linux contributors
-Description: Safe WinBoat integration tools for IRIScan Express 4
- Adds and removes only the IRIScan Express 4 QEMU USB passthrough argument.
- Package installation does not modify or restart WinBoat.
+Description: Ubuntu setup and diagnostics for IRIScan Express 4
+ Provides guided WinBoat setup, safe USB passthrough configuration, doctor,
+ rollback, and sanitized support tools. Installation does not modify WinBoat.

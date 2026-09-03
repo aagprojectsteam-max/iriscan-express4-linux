@@ -1,13 +1,13 @@
 # Public release artifacts
 
-`v0.2.0-winboat` is the first practical Ubuntu-use release. Its working path uses WinBoat and the official Windows driver. Native Linux remains experimental.
+The latest ordinary-user release is `v0.3.0-ubuntu`.
 
-Build the four public assets with:
+Its primary download is one clearly named package:
 
-```bash
-bash scripts/build-release.sh
+```text
+iriscan-express4-ubuntu-installer_0.3.0_all.deb
 ```
 
-The `.deb` installs host-side commands only and has no post-install action. Binary artifacts belong on the GitHub Release and are ignored by Git; release notes and checksum instructions are committed here.
+The only companion assets are a plain-text Quick Start and checksums. Build them with `bash scripts/build-release.sh`.
 
-The historical `v0.1.0-research` release and checksum record remain available. Do not replace or relabel that history.
+Historical releases `v0.1.0-research` and `v0.2.0-winboat` remain unchanged. Native Linux is still experimental.

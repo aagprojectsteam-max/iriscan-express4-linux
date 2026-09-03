@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=IRIScan Express 4 Setup
+Comment=Set up IRIScan Express 4 for Ubuntu through WinBoat
+Exec=/usr/lib/iriscan-express4-ubuntu/iriscan-terminal-wrapper.sh setup
+Terminal=true
+Categories=Utility;
+Keywords=scanner;IRIScan;WinBoat;
