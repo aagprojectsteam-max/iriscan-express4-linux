@@ -10,7 +10,7 @@ EXPECTED_MODEL='IRIScanExpress4'
 SELF_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 SRC="$SELF_DIR/../src/iriscan-express4-experimental.c"
 BIN="$SELF_DIR/aag-iriscan-poc"
-OPS="$SELF_DIR/../protocol"
+OPS_TEMPLATE="$SELF_DIR/../protocol"
 CONVERTER="$SELF_DIR/../tools/lineplanar_raw_to_png.py"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 OUT="$HOME/Downloads/IRIScan-Experimental-Scan-$STAMP"
@@ -30,10 +30,10 @@ Windows USB capture. It will move the paper and scan one page.
 EOF
 
 [[ -f "$SRC" ]] || fatal "Missing source: $SRC"
-[[ -d "$OPS" ]] || fatal "Missing transcript directory: $OPS"
+[[ -d "$OPS_TEMPLATE" ]] || fatal "Missing transcript directory: $OPS_TEMPLATE"
 [[ -x "$CONVERTER" ]] || fatal "Missing converter: $CONVERTER"
 for f in init.ops scan-setup-300dpi-color.ops next-batch.ops scan-finish.ops; do
-    [[ -f "$OPS/$f" ]] || fatal "Missing transcript: $OPS/$f"
+    [[ -f "$OPS_TEMPLATE/$f" ]] || fatal "Missing transcript: $OPS_TEMPLATE/$f"
 done
 
 if ! command -v gcc >/dev/null 2>&1; then
@@ -61,6 +61,27 @@ MANUFACTURER="$(trim_file "$USB_SYS/manufacturer")"
 PRODUCT="$(trim_file "$USB_SYS/product")"
 [[ "$MANUFACTURER" == 'IRIS' ]] || fatal "Unexpected manufacturer: $MANUFACTURER"
 [[ "$PRODUCT" == 'IRIScanExpress4' ]] || fatal "Unexpected product: $PRODUCT"
+
+# Public transcripts intentionally do not contain a private device serial.
+# Create a private runtime copy and inject this connected scanner's serial
+# into the one captured SEND payload that carries a 16-byte serial field.
+DEVICE_SERIAL="$(trim_file "$USB_SYS/serial")"
+[[ -n "$DEVICE_SERIAL" ]] || fatal "Scanner serial is unavailable"
+[[ ${#DEVICE_SERIAL} -le 16 ]] || fatal "Scanner serial is longer than the captured 16-byte field"
+SERIAL_HEX="$(printf '%-16s' "$DEVICE_SERIAL" | od -An -tx1 -v | tr -d ' \n')"
+OPS="$OUT/protocol-runtime"
+cp -a "$OPS_TEMPLATE" "$OPS"
+python3 - "$OPS/init.ops" "$SERIAL_HEX" <<'PY_SERIAL'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+serial_hex = sys.argv[2]
+placeholder = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+text = p.read_text()
+if text.count(placeholder) != 1:
+    raise SystemExit("serial placeholder missing or ambiguous")
+p.write_text(text.replace(placeholder, serial_hex))
+PY_SERIAL
 
 mapfile -t SG_NAMES < <(
     find "$USB_SYS" -type d -name 'sg[0-9]*' 2>/dev/null |
