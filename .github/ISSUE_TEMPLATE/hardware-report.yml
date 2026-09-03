@@ -1,0 +1,35 @@
+name: Hardware report
+description: Report another IRIScan Express 4 unit / Linux environment
+title: "Hardware report: "
+labels: [hardware-report]
+body:
+  - type: markdown
+    attributes:
+      value: "Run `./tools/iriscan-diagnose.sh`, review the generated bundle, and attach it if comfortable."
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution and version
+    validations:
+      required: true
+  - type: input
+    id: kernel
+    attributes:
+      label: Kernel version
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Scanner SCSI revision (from sg_inq, if available)
+  - type: dropdown
+    id: experimental
+    attributes:
+      label: Did you run the experimental scan tool?
+      options: ["No", "Yes"]
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Results / logs
