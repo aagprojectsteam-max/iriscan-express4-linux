@@ -1,0 +1,7 @@
+services:
+  windows:
+    image: ghcr.io/example/winboat:test
+    environment:
+      - ARGUMENTS=-machine q35 -device usb-host,vendorid=0x1234,productid=0xabcd,id=keep_me
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb

@@ -1,15 +1,13 @@
-# Public test artifacts
+# Public release artifacts
 
-Version `v0.1.0-research` is intentionally a **research/pre-release**, not a production scanner driver.
+`v0.2.0-winboat` is the first practical Ubuntu-use release. Its working path uses WinBoat and the official Windows driver. Native Linux remains experimental.
 
-Recommended public assets:
+Build the four public assets with:
 
-- `iriscan-express4-diagnostic_0.1.0_all.deb` — safe diagnostic package; does not install a scanner driver or send scan/motor commands.
-- `iriscan-express4-diagnostic-tools-0.1.0.tar.gz` — portable diagnostic scripts.
-- `iriscan-express4-linux-0.1.0-research.tar.gz` — full source/research tree.
-- `iriscan-express4-linux-0.1.0-research.zip` — same source/research tree as ZIP.
-- `0.1.0-research-SHA256SUMS.txt` — published checksums for all four assets.
+```bash
+bash scripts/build-release.sh
+```
 
-See `../docs/RELEASE-CHECKLIST.md` before publishing or replacing any release asset.
+The `.deb` installs host-side commands only and has no post-install action. Binary artifacts belong on the GitHub Release and are ignored by Git; release notes and checksum instructions are committed here.
 
-Do not label this release as a working Linux driver until complete native image acquisition is confirmed and repeated successfully.
+The historical `v0.1.0-research` release and checksum record remain available. Do not replace or relabel that history.

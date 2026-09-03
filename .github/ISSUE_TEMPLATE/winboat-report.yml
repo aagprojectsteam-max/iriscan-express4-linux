@@ -1,0 +1,30 @@
+name: WinBoat setup report
+description: Report working-now setup results without private Windows files
+title: "WinBoat result: "
+labels: [winboat]
+body:
+  - type: input
+    id: ubuntu
+    attributes:
+      label: Ubuntu and kernel version
+    validations:
+      required: true
+  - type: dropdown
+    id: pnp
+    attributes:
+      label: Did Windows show VID_0A38 and PID_0161?
+      options: ["Yes", "No"]
+    validations:
+      required: true
+  - type: dropdown
+    id: scans
+    attributes:
+      label: Were two pages scanned and saved successfully?
+      options: ["Yes", "No", "Not attempted"]
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Result and redacted support bundle
+      description: Do not upload vendor installers, serials, credentials, or scanned documents.

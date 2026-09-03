@@ -6,6 +6,8 @@ This table tracks independently tested IRIScan Express 4 units. Please submit a 
 |---|---|---|---|---|---|---|---|---|---|
 | `0a38:0161` | `IRIS / IRIScanExpress4` | `0.11` | Ubuntu 26.04 LTS / kernel 7.0 series (reference system) | PASS | PASS | PASS | PASS | BLOCKED: repeatable `resid=78` | NOT YET |
 
+The working-now WinBoat path is documented separately because it uses the official Windows driver. Host configuration is fixture-tested, but every installation still requires Windows PnP checks and two real page scans for end-to-end acceptance.
+
 ## What to report
 
 Please include:

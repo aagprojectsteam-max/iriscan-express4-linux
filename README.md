@@ -1,142 +1,103 @@
-# IRIScan Express 4 Linux Support
+# IRIScan Express 4 on Ubuntu
 
-Experimental, open-source Linux support and reverse-engineering toolkit for the **IRIScan Express 4** (`USB 0a38:0161`).
+Practical Ubuntu support for the **IRIScan Express 4** (`USB 0a38:0161`), with two deliberately separate paths.
 
-> **Research status:** this project can identify the scanner, communicate through Linux `SG_IO`, replay initialization, configure the captured 300 DPI color mode, start the motor/paper transport, poll scan status, and discover an image buffer. Complete native image transfer is **not yet production-ready**; the current blocker is the vendor-specific `C3` image-read path and its repeatable Linux `io.resid=78` behavior.
+| Path | Status | Best for |
+|---|---|---|
+| Ubuntu → WinBoat → Windows → official IRIS/Avision driver | **WORKING METHOD** | People who need to scan now |
+| Native Linux over `SG_IO` | **EXPERIMENTAL** | Developers and hardware testers |
 
-## Current status
+There is no production SANE backend yet. Paper movement is not the same as a completed scan, and this project does not claim native scanning works until full image acquisition passes the published success gate.
 
-| Capability | Status |
-|---|---|
-| USB detection (`0a38:0161`) | PASS |
-| SCSI / `SG_IO` communication | PASS |
-| Standard INQUIRY | PASS |
-| Captured initialization replay | PASS |
-| 300 DPI color setup | PASS |
-| Motor / paper transport | PASS |
-| Status polling | PASS |
-| Image-buffer discovery | PASS |
-| C3 image transfer | EXPERIMENTAL |
-| Complete native scan | NOT YET |
-| SANE backend | PLANNED |
-| NAPS2 / desktop scanner integration | PLANNED |
+## Option 1 — use the scanner now on Ubuntu
 
-## Hardware model
-
-The Express 4 presents a single USB Mass Storage / SCSI Transparent interface rather than USB Scanner Class:
-
-```text
-IRIScan Express 4
-  USB 0a38:0161
-       |
-       +-- Mass Storage class (08)
-           SCSI Transparent subclass (06)
-           Bulk-Only protocol (50)
-           Bulk IN  0x81
-           Bulk OUT 0x02
-```
-
-Linux normally attaches `usb-storage`. The scanner identifies over SCSI as vendor `IRIS`, model `IRIScanExpress4`, revision `0.11` on the reference device.
-
-## Start here
-
-Clone and validate the research tree:
+The practical route passes the physical USB scanner to Windows in [WinBoat](https://github.com/TibixDev/winboat), where the official IRIS/Avision Windows stack performs the scan.
 
 ```bash
 git clone https://github.com/aagprojectsteam-max/iriscan-express4-linux.git
 cd iriscan-express4-linux
+
+bash scripts/winboat/iriscan-winboat-preflight.sh
+bash scripts/winboat/iriscan-winboat-install.sh --dry-run
+bash scripts/winboat/iriscan-winboat-install.sh
+bash scripts/winboat/iriscan-winboat-verify.sh
+```
+
+The installer changes only WinBoat's QEMU `ARGUMENTS` value, adding:
+
+```text
+-device usb-host,vendorid=0x0a38,productid=0x0161
+```
+
+It preserves existing arguments, refuses missing USB-bus exposure, avoids duplicates, validates the compose file, and creates a timestamped backup. It does not restart WinBoat or touch other USB devices, storage, containers, or Windows data.
+
+After applying the change, restart WinBoat through its normal UI and complete the lawful official-driver setup in Windows. See [WinBoat setup](docs/WINBOAT.md) and [Windows driver verification](docs/WINDOWS-SETUP.md).
+
+Rollback removes only the managed IRIS argument:
+
+```bash
+bash scripts/winboat/iriscan-winboat-remove.sh --dry-run
+bash scripts/winboat/iriscan-winboat-remove.sh
+```
+
+Installing the optional `.deb` only installs these commands; it does **not** edit or restart WinBoat.
+
+## Option 2 — native Linux (experimental)
+
+The native research path dynamically finds the scanner's `/dev/sgX`, verifies both USB and SCSI identity, replays the captured 300 DPI Color setup, starts paper transport, polls status, and reaches a real image-buffer descriptor.
+
+Confirmed on the reference unit:
+
+- USB detection and standard SCSI INQUIRY
+- scanner initialization and captured 300 DPI Color setup
+- paper transport and status polling
+- ready descriptor (`width=2592`, `plane_rows=240`, non-zero address)
+
+Current blocker: vendor opcode `0xC3` returns successful SCSI/host/driver status but a repeatable Linux `io.resid=78` for both 65536-byte and 32768-byte requests. The code now records sentinel-buffer modification boundaries, hashes, residuals, sense data, and all SG status fields. It does not ignore the residual or manufacture missing bytes.
+
+Safe validation and diagnostics:
+
+```bash
 bash scripts/check.sh
-```
-
-`check.sh` reconstructs the sanitized initialization transcript, validates its markers, builds the C source with strict warnings, syntax-checks the shell tools and compiles the Python converter.
-
-### Safe diagnostics
-
-The diagnostic tools do not start a scan:
-
-```bash
-sudo apt install sg3-utils usbutils
 bash tools/iriscan-diagnose.sh
-```
-
-For a minimal hardware communication test using standard SCSI INQUIRY only:
-
-```bash
 sudo bash tools/iriscan-safe-inquiry.sh
 ```
 
-Please attach the generated support report to a hardware-report issue if your device behaves differently.
-
-### Experimental scanner code
-
-The experimental scan path physically moves paper and sends reverse-engineered vendor commands. Read `docs/TESTING.md` and `SECURITY.md` before running it.
-
-The one-command wrapper reconstructs the sanitized initialization transcript before launching the experimental scanner:
+The experimental scan command sends vendor commands and physically moves paper. Read [Testing](docs/TESTING.md) and [Security](SECURITY.md) first:
 
 ```bash
 bash scripts/prepare-and-run-experimental-scan.sh
 ```
 
-This is for development/testing, not normal scanning yet. A complete image has **not** yet been proven on native Linux.
+See [protocol notes](docs/PROTOCOL.md), [C3 forensics](docs/C3-FORENSIC.md), and [development status](docs/DEVELOPMENT-STATUS.md).
 
-## What has been reverse engineered
+## Option 3 — help test
 
-A known-good Windows scan was captured at **300 DPI Color**. The research artifacts establish a vendor command/state-machine path over SCSI/USB Mass Storage. The Linux implementation has reproduced initialization, scan start, paper movement, polling, and a real ready-buffer descriptor (`width=2592`, `plane_rows=240`, non-zero device memory address).
+Create a narrowly scoped, redacted archive and attach it to a Hardware Report issue:
 
-The unresolved boundary is image payload retrieval through vendor opcode `0xC3`. Requests of both 65536 and 32768 bytes returned successful `SG_IO` status but a repeatable residual count of 78 bytes. The project deliberately does not guess whether that residual represents missing payload or transport semantics; `docs/C3-FORENSIC.md` tracks the investigation.
+```bash
+bash scripts/winboat/iriscan-winboat-support-bundle.sh
+```
+
+Review the archive before publishing it. It excludes unrelated disk inventories and redacts scanner serials, usernames, home paths, common credentials, and token shapes by default.
 
 ## Repository layout
 
 ```text
-src/        experimental Linux implementation
-tools/      safe diagnostics and forensic research helpers
-protocol/   sanitized operation transcripts from the captured protocol
-docs/       hardware, protocol, testing, privacy and development notes
-scripts/    materialization, build, checks and experimental-run helpers
-packaging/  future udev / Debian packaging work
-.github/    CI and issue templates
-releases/   release notes/checklists/checksums (binary assets belong in GitHub Releases)
+scripts/winboat/  safe WinBoat detection, install, verify, removal and support tools
+tests/            fixture tests for idempotency, preservation and rollback
+packaging/        non-destructive Debian package metadata
+src/              experimental native Linux implementation
+tools/            safe diagnostics, compose editor and image conversion
+protocol/         sanitized captured-operation transcripts
+docs/             user, protocol, privacy and development documentation
+releases/         release notes and checksums
 ```
 
-The initialization capture is committed in sanitized parts under `protocol/init-parts/`. Run:
+The public protocol uses a serial placeholder. The connected scanner's serial is inserted only into a private runtime copy. `/dev/sgX` is never hard-coded.
 
-```bash
-bash scripts/materialize-protocol.sh
-```
+## Legal and privacy
 
-to reconstruct the runtime `protocol/init.ops`. The connected scanner's serial is injected only into a private runtime copy when the experimental test starts; no reference-device serial is published in this repository.
+This independent interoperability project is not affiliated with IRIS or Avision. It does not redistribute proprietary vendor drivers, DLLs, executables, private captures, or scanned documents. Obtain the Windows software from an official/licensed source.
 
-## Goals
-
-The intended end state is:
-
-```text
-sudo apt install ./iriscan-express4_<version>_amd64.deb
-scanimage -L
-```
-
-followed by normal use through SANE-compatible applications, without hard-coding `/dev/sgX`, broad `disk` permissions, or manual setup after every reboot/replug.
-
-## Contributing / hardware testers
-
-Additional Express 4 units are especially useful. We want to compare:
-
-- USB descriptors and firmware revisions
-- SCSI identity
-- kernel/distro behavior
-- C3 residual behavior
-- eventual successful scan results
-
-Please use the issue templates. Do **not** upload proprietary IRIS/Avision binaries, private documents, scanner serials unless necessary, or unsanitized captures.
-
-## Releases
-
-The first public line is **v0.1.0-research**. It is intentionally a research/pre-release line, not a production driver. See `releases/README.md` and `docs/RELEASE-CHECKLIST.md` for the source/diagnostic assets and their checksums.
-
-## Legal / provenance
-
-This is an independent interoperability/research project and is not affiliated with IRIS or Avision. Vendor Windows DLL/EXE/driver binaries are intentionally not distributed here.
-
-## License
-
-MIT. See `LICENSE`.
+MIT licensed. See [LICENSE](LICENSE).
