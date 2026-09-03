@@ -1,0 +1,9 @@
+build/
+*.o
+*.raw
+*.ppm
+*.png
+*.log
+*.tar.gz
+*.zip
+__pycache__/
