@@ -1,0 +1,23 @@
+name: C3 image-read result
+description: Report experimental C3 behavior
+title: "C3 result: "
+labels: [c3, experimental]
+body:
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution / kernel
+    validations:
+      required: true
+  - type: input
+    id: requested
+    attributes:
+      label: Requested C3 chunk size
+  - type: input
+    id: actual
+    attributes:
+      label: resid-derived actual length
+  - type: textarea
+    id: log
+    attributes:
+      label: Relevant log excerpt
